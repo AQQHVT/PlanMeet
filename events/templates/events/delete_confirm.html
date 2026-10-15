@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление события — ПланМит{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 32px auto;">
+    <div class="card text-center">
+        <h2>🗑 Удалить событие?</h2>
+        <p class="text-muted mt-2 mb-2">
+            Вы собираетесь удалить событие <strong>«{{ event.title }}»</strong>.<br>
+            Все голоса будут безвозвратно удалены.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex" style="justify-content: center;">
+                <button type="submit" class="btn btn-danger">Да, удалить</button>
+                <a href="{% url 'events:detail' slug=event.slug %}" class="btn btn-ghost">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои события — ПланМит{% endblock %}
+
+{% block content %}
+<div class="flex flex-between mb-2">
+    <h1>📋 Мои события</h1>
+    <a href="{% url 'events:create' %}" class="btn btn-primary">➕ Создать событие</a>
+</div>
+
+{% if events %}
+    <div class="events-list">
+        {% for event in events %}
+            <a href="{% url 'events:detail' slug=event.slug %}" class="event-card">
+                <div class="event-card-title">
+                    {{ event.title }}
+                    {% if event.is_closed %}
+                        <span class="badge badge-closed">Закрыто</span>
+                    {% else %}
+                        <span class="badge badge-open">Открыто</span>
+                    {% endif %}
+                </div>
+                <div class="event-card-meta">
+                    <span>📅 Создано: {{ event.created_at|date:"d.m.Y H:i" }}</span>
+                    <span>🗓 Вариантов: {{ event.time_slots.count }}</span>
+                    <span>👥 Участников: {{ event.get_participants_count }}</span>
+                    {% if event.deadline %}
+                        <span>⏳ До: {{ event.deadline|date:"d.m.Y H:i" }}</span>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card" style="max-width:680px; margin:0 auto;">
+        <div style="text-align:center; margin-bottom:24px;">
+            <div style="font-size:48px; margin-bottom:12px;">📅</div>
+            <h2 style="font-size:20px; margin-bottom:6px;">У вас пока нет событий</h2>
+            <p class="text-muted">Создайте первое голосование и поделитесь ссылкой с участниками</p>
+        </div>
+
+        <ol style="padding-left:20px; display:flex; flex-direction:column; gap:14px; margin-bottom:28px;">
+            <li>
+                <strong>Заполните информацию о событии</strong>
+                <p class="text-muted" style="margin:4px 0 0; font-size:14px;">
+                    Укажите название, место, описание и при необходимости дедлайн — дату, после которой голосование закроется автоматически.
+                </p>
+            </li>
+            <li>
+                <strong>Добавьте варианты времени</strong>
+                <p class="text-muted" style="margin:4px 0 0; font-size:14px;">
+                    Используйте карусель или календарь, чтобы выбрать дату и время. Укажите длительность встречи и нажмите «Добавить вариант». Можно добавить сколько угодно вариантов.
+                </p>
+            </li>
+            <li>
+                <strong>Поделитесь ссылкой</strong>
+                <p class="text-muted" style="margin:4px 0 0; font-size:14px;">
+                    После создания вы получите уникальную ссылку. Отправьте её участникам — каждый сможет отметить удобное время.
+                </p>
+            </li>
+            <li>
+                <strong>Выберите лучший вариант</strong>
+                <p class="text-muted" style="margin:4px 0 0; font-size:14px;">
+                    Система автоматически подсветит вариант с наибольшим числом голосов. Закройте голосование, когда все проголосовали.
+                </p>
+            </li>
+        </ol>
+
+        <div style="text-align:center;">
+            <a href="{% url 'events:create' %}" class="btn btn-primary btn-large">➕ Создать событие</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

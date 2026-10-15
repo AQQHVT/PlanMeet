@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru" data-theme="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ПланМит — опросы для мероприятий{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script>
+        (function() {
+            var t = localStorage.getItem('theme');
+            if (t) document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{% url 'core:home' %}" class="logo">
+                <span class="logo-icon">📅</span>
+                <span class="logo-text">ПланМит</span>
+            </a>
+            <nav class="nav">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'events:my_events' %}" class="nav-link">Мои события</a>
+                    <span class="nav-user">👤 {{ user.username }}</span>
+                    <a href="{% url 'users:logout' %}" class="btn btn-ghost">Выйти</a>
+                {% else %}
+                    <a href="{% url 'users:login' %}" class="btn btn-ghost">Войти</a>
+                    <a href="{% url 'users:register' %}" class="btn btn-primary">Регистрация</a>
+                {% endif %}
+                <button class="theme-toggle" id="themeToggle" title="Сменить тему" aria-label="Сменить тему">🌙</button>
+            </nav>
+        </div>
+    </header>
+
+    {% if messages %}
+    <div class="container">
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <main class="main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 ПланМит — простой способ собраться вместе</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        (function() {
+            var btn = document.getElementById('themeToggle');
+            var html = document.documentElement;
+            function applyTheme(t) {
+                html.setAttribute('data-theme', t);
+                btn.textContent = t === 'dark' ? '☀️' : '🌙';
+            }
+            applyTheme(localStorage.getItem('theme') || '');
+            btn.addEventListener('click', function() {
+                var next = html.getAttribute('data-theme') === 'dark' ? '' : 'dark';
+                localStorage.setItem('theme', next);
+                applyTheme(next);
+            });
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

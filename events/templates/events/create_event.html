@@ -1,0 +1,1133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Создать событие — ПланМит{% endblock %}
+
+{% block content %}
+<div class="create-event-page">
+    <div class="page-head">
+        <h1>📅 Создать событие</h1>
+        <p class="text-muted">Заполните информацию и добавьте варианты времени для голосования</p>
+    </div>
+
+    <form method="post" id="event-form" novalidate>
+        {% csrf_token %}
+
+        <!-- ====== Информация о событии ====== -->
+        <div class="card">
+            <h2 class="section-title">📝 Информация о событии</h2>
+
+            <div class="form-group">
+                <label for="id_title" class="form-label">{{ form.title.label }}</label>
+                {{ form.title }}
+                {% if form.title.errors %}<div class="form-errors">{{ form.title.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_description" class="form-label">{{ form.description.label }}</label>
+                {{ form.description }}
+                {% if form.description.errors %}<div class="form-errors">{{ form.description.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_location" class="form-label">{{ form.location.label }}</label>
+                    {{ form.location }}
+                    {% if form.location.errors %}<div class="form-errors">{{ form.location.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_deadline" class="form-label">{{ form.deadline.label }}</label>
+                    {{ form.deadline }}
+                    <div class="form-help">После этого времени голосование закроется автоматически</div>
+                    {% if form.deadline.errors %}<div class="form-errors">{{ form.deadline.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== Варианты времени ====== -->
+        <div class="card">
+            <h2 class="section-title">⏰ Варианты времени для голосования</h2>
+
+            <!-- Переключатель режимов -->
+            <div class="picker-tabs" role="tablist">
+                <button type="button" class="picker-tab active" data-tab="carousel" role="tab">🎠 Карусель</button>
+                <button type="button" class="picker-tab" data-tab="calendar" role="tab">📆 Календарь</button>
+            </div>
+
+            <!-- ===== Режим карусели ===== -->
+            <div id="tab-carousel" class="picker-pane active">
+                <p class="picker-hint">Прокручивайте колесом мыши или нажимайте стрелки</p>
+                <div class="carousels">
+                    <div class="carousel-col">
+                        <div class="carousel-cap">Месяц</div>
+                        <div class="carousel" data-type="month" tabindex="0">
+                            <button type="button" class="carousel-arrow" data-dir="-1" aria-label="Назад">▲</button>
+                            <div class="carousel-window">
+                                <div class="carousel-item ghost" data-offset="-1"></div>
+                                <div class="carousel-item current" data-offset="0">05</div>
+                                <div class="carousel-item ghost" data-offset="1"></div>
+                            </div>
+                            <button type="button" class="carousel-arrow" data-dir="1" aria-label="Вперёд">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="carousel-col">
+                        <div class="carousel-cap">День</div>
+                        <div class="carousel" data-type="day" tabindex="0">
+                            <button type="button" class="carousel-arrow" data-dir="-1" aria-label="Назад">▲</button>
+                            <div class="carousel-window">
+                                <div class="carousel-item ghost" data-offset="-1"></div>
+                                <div class="carousel-item current" data-offset="0">20</div>
+                                <div class="carousel-item ghost" data-offset="1"></div>
+                            </div>
+                            <button type="button" class="carousel-arrow" data-dir="1" aria-label="Вперёд">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="carousel-col">
+                        <div class="carousel-cap">Час</div>
+                        <div class="carousel" data-type="hour" tabindex="0">
+                            <button type="button" class="carousel-arrow" data-dir="-1" aria-label="Назад">▲</button>
+                            <div class="carousel-window">
+                                <div class="carousel-item ghost" data-offset="-1"></div>
+                                <div class="carousel-item current" data-offset="0">10</div>
+                                <div class="carousel-item ghost" data-offset="1"></div>
+                            </div>
+                            <button type="button" class="carousel-arrow" data-dir="1" aria-label="Вперёд">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="carousel-col">
+                        <div class="carousel-cap">Минута</div>
+                        <div class="carousel" data-type="minute" tabindex="0">
+                            <button type="button" class="carousel-arrow" data-dir="-1" aria-label="Назад">▲</button>
+                            <div class="carousel-window">
+                                <div class="carousel-item ghost" data-offset="-1"></div>
+                                <div class="carousel-item current" data-offset="0">00</div>
+                                <div class="carousel-item ghost" data-offset="1"></div>
+                            </div>
+                            <button type="button" class="carousel-arrow" data-dir="1" aria-label="Вперёд">▼</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="picker-year text-muted text-center">Год: <span id="carousel-year">2026</span></div>
+            </div>
+
+            <!-- ===== Режим календаря ===== -->
+            <div id="tab-calendar" class="picker-pane">
+                <div class="calendar-grid">
+                    <div class="calendar-box">
+                        <div class="calendar-head">
+                            <button type="button" class="calendar-nav" id="cal-prev" aria-label="Предыдущий месяц">◀</button>
+                            <div class="calendar-title" id="calendar-title">Май 2026</div>
+                            <button type="button" class="calendar-nav" id="cal-next" aria-label="Следующий месяц">▶</button>
+                        </div>
+                        <div class="weekdays">
+                            <div>Пн</div><div>Вт</div><div>Ср</div>
+                            <div>Чт</div><div>Пт</div>
+                            <div class="weekend">Сб</div><div class="weekend">Вс</div>
+                        </div>
+                        <div class="days" id="calendar-days"></div>
+                    </div>
+
+                    <div class="calendar-time">
+                        <div class="form-group">
+                            <label class="form-label" for="cal-hour">Час</label>
+                            <input type="number" id="cal-hour" min="0" max="23" value="10" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cal-minute">Минута</label>
+                            <input type="number" id="cal-minute" min="0" max="59" step="5" value="00" class="form-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Длительность ===== -->
+            <div class="duration-box">
+                <div class="duration-label">⏱️ Длительность события</div>
+                <div class="duration-inputs">
+                    <div class="duration-pair">
+                        <input type="number" id="duration-hours" min="0" max="24" value="1" class="form-input">
+                        <span class="duration-unit">ч</span>
+                    </div>
+                    <div class="duration-pair">
+                        <input type="number" id="duration-minutes" min="0" max="59" step="5" value="0" class="form-input">
+                        <span class="duration-unit">мин</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Предпросмотр ===== -->
+            <div class="preview-box">
+                <div class="preview-row">
+                    <span class="preview-key">Начало:</span>
+                    <span class="preview-val" id="preview-start">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-key">Окончание:</span>
+                    <span class="preview-val" id="preview-end">—</span>
+                </div>
+
+            </div>
+
+            <!-- ===== Кнопки действий ===== -->
+            <div class="actions-row">
+                <button type="button" class="btn btn-primary" id="btn-add-slot">➕ Добавить вариант</button>
+                <button type="button" class="btn btn-ghost" id="btn-clear-slots">🗑️ Очистить</button>
+            </div>
+
+            <!-- ===== Список вариантов ===== -->
+            <div class="slots-list" id="slots-list">
+                <div class="empty-state slots-empty">
+                    <div class="empty-state-icon">🕐</div>
+                    <p>Пока нет добавленных вариантов</p>
+                </div>
+            </div>
+
+            <input type="hidden" id="time-slots-json" name="time_slots_json" value="[]">
+        </div>
+
+        <!-- ====== Submit ====== -->
+        <div class="submit-row">
+            <a href="{% url 'core:home' %}" class="btn btn-ghost">Отмена</a>
+            <button type="submit" class="btn btn-primary btn-large">✅ Создать событие</button>
+        </div>
+    </form>
+</div>
+
+<style>
+/* ==================================================
+   Create Event Page — стили в стиле проекта
+   Использует переменные темы из style.css
+   ================================================== */
+
+.create-event-page { max-width: 900px; margin: 0 auto; }
+.page-head { text-align: center; margin-bottom: 24px; }
+.page-head h1 { font-size: 28px; margin-bottom: 6px; }
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* Сетка из двух полей в ряд (с переносом на mobile) */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.form-row .form-group { margin-bottom: 0; }
+
+/* ===== Переключатель вкладок ===== */
+.picker-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+}
+.picker-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.picker-tab:hover { color: var(--text); }
+.picker-tab.active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.picker-pane { display: none; }
+.picker-pane.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.picker-hint {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* ===== Карусель ===== */
+.carousels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.carousel-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+.carousel-cap {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.carousel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px;
+    width: 100%;
+    max-width: 100px;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.carousel:focus,
+.carousel:focus-within,
+.carousel:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+    outline: none;
+}
+
+.carousel-arrow {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-radius: 6px;
+    width: 36px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.carousel-arrow:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.carousel-arrow:active { transform: scale(0.92); }
+.carousel-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.carousel-window {
+    width: 100%;
+    height: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.carousel-item {
+    height: 32px;
+    line-height: 32px;
+    width: 100%;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-item.current {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.carousel-item.ghost {
+    font-size: 14px;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.carousel-item.spin-up { animation: spinUp 0.25s ease; }
+.carousel-item.spin-down { animation: spinDown 0.25s ease; }
+
+@keyframes spinUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes spinDown {
+    0% { transform: translateY(-20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.picker-year { margin-top: 8px; font-size: 14px; }
+
+/* ===== Календарь ===== */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 16px;
+}
+
+.calendar-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+.calendar-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.calendar-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+}
+.calendar-nav {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+.calendar-nav:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+.weekdays > div {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 6px 0;
+}
+.weekdays .weekend { color: var(--danger); }
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+}
+.day:hover:not(.disabled):not(.other-month) {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.day.other-month {
+    color: var(--text-muted);
+    opacity: 0.4;
+    cursor: default;
+}
+.day.today {
+    border-color: var(--primary);
+    color: var(--primary);
+    font-weight: 700;
+}
+.day.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.day.selected.today { color: white; }
+.day.disabled {
+    color: var(--text-muted);
+    opacity: 0.3;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.calendar-time {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.calendar-time .form-group { margin-bottom: 12px; }
+.calendar-time .form-group:last-child { margin-bottom: 0; }
+
+/* ===== Длительность ===== */
+.duration-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.duration-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+}
+.duration-inputs {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+    justify-content: flex-end;
+}
+.duration-pair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.duration-pair input {
+    width: 70px;
+    text-align: center;
+    font-weight: 600;
+}
+.duration-unit {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ===== Предпросмотр ===== */
+.preview-box {
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+}
+.preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.preview-key {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+.preview-val {
+    color: var(--primary-dark);
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+[data-theme="dark"] .preview-val { color: var(--primary); }
+
+.preview-warn {
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 13px;
+    justify-content: center;
+    border-top: 1px dashed var(--danger);
+    margin-top: 6px;
+    padding-top: 10px;
+}
+
+/* ===== Кнопки действий ===== */
+.actions-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.actions-row .btn { flex: 1; min-width: 160px; }
+
+/* ===== Список вариантов ===== */
+.slots-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.slots-list::-webkit-scrollbar { width: 6px; }
+.slots-list::-webkit-scrollbar-track { background: transparent; }
+.slots-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.slot-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius-sm);
+    gap: 12px;
+    animation: slideIn 0.25s ease;
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.slot-time {
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.slot-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.slots-empty { padding: 24px 16px; }
+
+/* ===== Submit row ===== */
+.submit-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+/* ===== Адаптивность ===== */
+@media (max-width: 768px) {
+    .page-head h1 { font-size: 22px; }
+
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+    .form-row .form-group { margin-bottom: 16px; }
+    .form-row .form-group:last-child { margin-bottom: 0; }
+
+    .carousels {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .carousel { max-width: none; }
+    .carousel-window { height: 84px; }
+    .carousel-item.current { font-size: 22px; }
+
+    .calendar-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .calendar-time { flex-direction: row; gap: 12px; }
+    .calendar-time .form-group { flex: 1; margin-bottom: 0; }
+
+    .duration-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .duration-inputs { justify-content: stretch; min-width: 0; }
+    .duration-pair { flex: 1; }
+    .duration-pair input { width: 100%; }
+
+    .preview-row { font-size: 13px; }
+    .preview-val { font-size: 14px; }
+
+    .actions-row .btn { flex: 1 1 100%; min-width: 0; }
+    .submit-row { flex-direction: column-reverse; }
+    .submit-row .btn { width: 100%; }
+}
+
+@media (max-width: 380px) {
+    .picker-tab { font-size: 13px; padding: 8px 10px; }
+    .carousels { grid-template-columns: repeat(2, 1fr); }
+    .carousel-arrow { width: 32px; height: 26px; }
+    .carousel-item.current { font-size: 20px; }
+    .day { font-size: 12px; }
+}
+
+/* ===== Тёмная тема — мелкие правки ===== */
+[data-theme="dark"] .preview-box {
+    background: rgba(160, 168, 184, 0.07);
+}
+[data-theme="dark"] .carousel-item.current { color: #c8cdd8; }
+</style>
+
+<script>
+(function() {
+    'use strict';
+
+    // ===== Состояние =====
+    const now = new Date();
+    // Округлим минуты до ближайших 5 в большую сторону
+    let initMinute = Math.ceil(now.getMinutes() / 5) * 5;
+    let initHour = now.getHours();
+    let initDay = now.getDate();
+    let initMonth = now.getMonth() + 1;
+    let initYear = now.getFullYear();
+    if (initMinute >= 60) {
+        initMinute -= 60;
+        initHour += 1;
+    }
+    if (initHour >= 24) {
+        initHour -= 24;
+        // Переход на следующий день
+        const next = new Date(initYear, initMonth - 1, initDay + 1);
+        initDay = next.getDate();
+        initMonth = next.getMonth() + 1;
+        initYear = next.getFullYear();
+    }
+
+    const state = {
+        carousel: { year: initYear, month: initMonth, day: initDay, hour: initHour, minute: initMinute },
+        calendar: { year: initYear, month: initMonth, day: initDay },
+        slots: []
+    };
+
+    const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const pad = (n) => String(n).padStart(2, '0');
+
+    // ===== Проверка: время в прошлом? =====
+    function isPast(dateObj) {
+        // Сравниваем с моментом "сейчас минута в минуту"
+        const cmpNow = new Date();
+        cmpNow.setSeconds(0, 0);
+        return dateObj < cmpNow;
+    }
+
+    function isDayPast(year, month, day) {
+        const d = new Date(year, month - 1, day);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return d < today;
+    }
+
+    // ===== Вкладки =====
+    document.querySelectorAll('.picker-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.picker-tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.picker-pane').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            if (btn.dataset.tab === 'calendar') renderCalendar();
+            updatePreview();
+        });
+    });
+
+    // ===== Карусель =====
+    const monthsShort = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+
+    function getCarouselValue(type, value) {
+        if (type === 'month') return monthsShort[value - 1];
+        return pad(value);
+    }
+
+    function clampDay() {
+        const daysInMonth = new Date(state.carousel.year, state.carousel.month, 0).getDate();
+        if (state.carousel.day > daysInMonth) state.carousel.day = daysInMonth;
+    }
+
+    function rollOverIfPast() {
+        // Если выбранный момент в прошлом, подталкиваем к ближайшему моменту в будущем.
+        // Возвращаем true если пришлось подкорректировать.
+        const c = state.carousel;
+        const sel = new Date(c.year, c.month - 1, c.day, c.hour, c.minute);
+        if (!isPast(sel)) return false;
+        // Не меняем выбор за пользователя, просто покажем предупреждение в превью
+        return true;
+    }
+
+    function changeCarousel(type, dir) {
+        const c = state.carousel;
+        if (type === 'month') {
+            c.month += dir;
+            if (c.month > 12) { c.month = 1; c.year += 1; }
+            if (c.month < 1) { c.month = 12; c.year -= 1; }
+            clampDay();
+        } else if (type === 'day') {
+            const daysInMonth = new Date(c.year, c.month, 0).getDate();
+            c.day += dir;
+            if (c.day > daysInMonth) {
+                c.day = 1;
+                c.month += 1;
+                if (c.month > 12) { c.month = 1; c.year += 1; }
+            } else if (c.day < 1) {
+                c.month -= 1;
+                if (c.month < 1) { c.month = 12; c.year -= 1; }
+                c.day = new Date(c.year, c.month, 0).getDate();
+            }
+        } else if (type === 'hour') {
+            c.hour += dir;
+            if (c.hour > 23) { c.hour = 0; }
+            if (c.hour < 0) { c.hour = 23; }
+        } else if (type === 'minute') {
+            c.minute += dir * 5;
+            if (c.minute > 59) { c.minute = 0; }
+            if (c.minute < 0) { c.minute = 55; }
+        }
+        renderCarousels(type, dir);
+        updatePreview();
+    }
+
+    function renderCarousels(animatedType, dir) {
+        document.querySelectorAll('.carousel').forEach(car => {
+            const type = car.dataset.type;
+            const c = state.carousel;
+            let value, prev, next;
+
+            if (type === 'month') {
+                value = c.month;
+                prev = value === 1 ? 12 : value - 1;
+                next = value === 12 ? 1 : value + 1;
+            } else if (type === 'day') {
+                const daysInMonth = new Date(c.year, c.month, 0).getDate();
+                value = c.day;
+                prev = value === 1 ? daysInMonth : value - 1;
+                next = value === daysInMonth ? 1 : value + 1;
+            } else if (type === 'hour') {
+                value = c.hour;
+                prev = value === 0 ? 23 : value - 1;
+                next = value === 23 ? 0 : value + 1;
+            } else if (type === 'minute') {
+                value = c.minute;
+                prev = value === 0 ? 55 : value - 5;
+                next = value >= 55 ? 0 : value + 5;
+            }
+
+            const items = car.querySelectorAll('.carousel-item');
+            items[0].textContent = getCarouselValue(type, prev);
+            items[1].textContent = getCarouselValue(type, value);
+            items[2].textContent = getCarouselValue(type, next);
+
+            // Анимация
+            if (animatedType === type) {
+                const cur = items[1];
+                cur.classList.remove('spin-up', 'spin-down');
+                // re-flow для перезапуска анимации
+                void cur.offsetWidth;
+                cur.classList.add(dir > 0 ? 'spin-up' : 'spin-down');
+            }
+        });
+        document.getElementById('carousel-year').textContent = state.carousel.year;
+    }
+
+    // Привязка стрелок и колеса
+    document.querySelectorAll('.carousel').forEach(car => {
+        const type = car.dataset.type;
+
+        car.querySelectorAll('.carousel-arrow').forEach(arr => {
+            arr.addEventListener('click', (e) => {
+                e.preventDefault();
+                changeCarousel(type, parseInt(arr.dataset.dir, 10));
+            });
+        });
+
+        // Колесо мыши
+        car.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const dir = e.deltaY > 0 ? 1 : -1;
+            changeCarousel(type, dir);
+        }, { passive: false });
+
+        // Стрелки клавиатуры (когда карусель в фокусе)
+        car.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                changeCarousel(type, 1);
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                changeCarousel(type, -1);
+            }
+        });
+
+        // Тачскрин (свайп)
+        let touchStartY = null;
+        car.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        car.addEventListener('touchmove', (e) => {
+            if (touchStartY === null) return;
+            const dy = e.touches[0].clientY - touchStartY;
+            if (Math.abs(dy) > 20) {
+                e.preventDefault();
+                changeCarousel(type, dy > 0 ? -1 : 1);
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+        car.addEventListener('touchend', () => { touchStartY = null; });
+    });
+
+    // ===== Календарь =====
+    function renderCalendar() {
+        const { year, month, day } = state.calendar;
+        document.getElementById('calendar-title').textContent = `${MONTHS[month - 1]} ${year}`;
+
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0);
+        const daysInMonth = lastDay.getDate();
+        const startDow = (firstDay.getDay() + 6) % 7;
+
+        const container = document.getElementById('calendar-days');
+        container.innerHTML = '';
+
+        const prevMonthLast = new Date(year, month - 1, 0).getDate();
+        for (let i = startDow - 1; i >= 0; i--) {
+            const d = document.createElement('div');
+            d.className = 'day other-month';
+            d.textContent = prevMonthLast - i;
+            container.appendChild(d);
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const d = document.createElement('div');
+            d.className = 'day';
+            d.textContent = i;
+
+            const thisDate = new Date(year, month - 1, i);
+            const isToday = thisDate.getTime() === today.getTime();
+            const isSelected = (i === day);
+            const isPastDay = thisDate < today;
+
+            if (isToday) d.classList.add('today');
+            if (isSelected && !isPastDay) d.classList.add('selected');
+            if (isPastDay) d.classList.add('disabled');
+
+            if (!isPastDay) {
+                d.addEventListener('click', () => {
+                    state.calendar.day = i;
+                    renderCalendar();
+                    updatePreview();
+                });
+            }
+            container.appendChild(d);
+        }
+
+        const totalCells = container.children.length;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 1; i <= trailing; i++) {
+            const d = document.createElement('div');
+            d.className = 'day other-month';
+            d.textContent = i;
+            container.appendChild(d);
+        }
+    }
+
+    document.getElementById('cal-prev').addEventListener('click', () => {
+        state.calendar.month -= 1;
+        if (state.calendar.month < 1) { state.calendar.month = 12; state.calendar.year -= 1; }
+        renderCalendar();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+        state.calendar.month += 1;
+        if (state.calendar.month > 12) { state.calendar.month = 1; state.calendar.year += 1; }
+        renderCalendar();
+    });
+
+    ['cal-hour', 'cal-minute'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updatePreview);
+        document.getElementById(id).addEventListener('change', updatePreview);
+    });
+
+    // ===== Получение выбранной даты =====
+    function getSelectedStart() {
+        const activeTab = document.querySelector('.picker-tab.active').dataset.tab;
+        if (activeTab === 'carousel') {
+            const c = state.carousel;
+            return new Date(c.year, c.month - 1, c.day, c.hour, c.minute);
+        } else {
+            const c = state.calendar;
+            let h = parseInt(document.getElementById('cal-hour').value, 10);
+            let m = parseInt(document.getElementById('cal-minute').value, 10);
+            if (isNaN(h) || h < 0 || h > 23) h = 0;
+            if (isNaN(m) || m < 0 || m > 59) m = 0;
+            return new Date(c.year, c.month - 1, c.day, h, m);
+        }
+    }
+
+    function getDurationMinutes() {
+        const h = parseInt(document.getElementById('duration-hours').value, 10) || 0;
+        const m = parseInt(document.getElementById('duration-minutes').value, 10) || 0;
+        return Math.max(0, h * 60 + m);
+    }
+
+    function getSelectedEnd(start) {
+        const minutes = getDurationMinutes();
+        return new Date(start.getTime() + minutes * 60000);
+    }
+
+    function fmt(date) {
+        return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // ===== Предпросмотр =====
+    function updatePreview() {
+        const start = getSelectedStart();
+        const end = getSelectedEnd(start);
+        document.getElementById('preview-start').textContent = fmt(start);
+        document.getElementById('preview-end').textContent = fmt(end);
+
+    }
+
+    // ===== Длительность =====
+    ['duration-hours', 'duration-minutes'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updatePreview);
+        document.getElementById(id).addEventListener('change', updatePreview);
+    });
+
+    // ===== Список вариантов =====
+    function renderSlots() {
+        const list = document.getElementById('slots-list');
+        if (state.slots.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state slots-empty">
+                    <div class="empty-state-icon">🕐</div>
+                    <p>Пока нет добавленных вариантов</p>
+                </div>
+            `;
+        } else {
+            list.innerHTML = state.slots.map(s => {
+                const h = Math.floor(s.durationMinutes / 60);
+                const m = s.durationMinutes % 60;
+                let dur = '';
+                if (h > 0) dur += `${h} ч `;
+                if (m > 0) dur += `${m} мин`;
+                if (!dur) dur = '0 мин';
+                return `
+                    <div class="slot-item">
+                        <div>
+                            <div class="slot-time">${s.startFormatted}</div>
+                            <div class="slot-meta">Длительность: ${dur.trim()} → до ${s.endFormatted.split(' ')[1]}</div>
+                        </div>
+                        <button type="button" class="btn-remove" data-id="${s.id}" aria-label="Удалить вариант">✕</button>
+                    </div>
+                `;
+            }).join('');
+
+            list.querySelectorAll('.btn-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.slots = state.slots.filter(s => s.id !== parseInt(btn.dataset.id, 10));
+                    saveSlotsJSON();
+                    renderSlots();
+                });
+            });
+        }
+    }
+
+    function saveSlotsJSON() {
+        document.getElementById('time-slots-json').value = JSON.stringify(
+            state.slots.map(s => ({
+                dateTime: s.startISO,
+                durationMinutes: s.durationMinutes
+            }))
+        );
+    }
+
+    document.getElementById('btn-add-slot').addEventListener('click', () => {
+        const start = getSelectedStart();
+        if (isPast(start)) {
+            alert('Нельзя добавить вариант с временем в прошлом');
+            return;
+        }
+        const end = getSelectedEnd(start);
+        const slot = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            startISO: start.toISOString(),
+            startFormatted: fmt(start),
+            endFormatted: fmt(end),
+            durationMinutes: getDurationMinutes()
+        };
+        // Не добавляем дубликаты
+        if (state.slots.some(s => s.startISO === slot.startISO)) {
+            alert('Такой вариант времени уже добавлен');
+            return;
+        }
+        state.slots.push(slot);
+        // Сортируем по времени
+        state.slots.sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+        saveSlotsJSON();
+        renderSlots();
+    });
+
+    document.getElementById('btn-clear-slots').addEventListener('click', () => {
+        if (state.slots.length === 0) return;
+        if (confirm('Удалить все добавленные варианты?')) {
+            state.slots = [];
+            saveSlotsJSON();
+            renderSlots();
+        }
+    });
+
+    // ===== Submit =====
+    document.getElementById('event-form').addEventListener('submit', (e) => {
+        if (state.slots.length === 0) {
+            e.preventDefault();
+            alert('Добавьте хотя бы один вариант времени для голосования');
+            return false;
+        }
+        // Финальная проверка: ни один слот не должен быть в прошлом
+        const hasPastSlot = state.slots.some(s => isPast(new Date(s.startISO)));
+        if (hasPastSlot) {
+            e.preventDefault();
+            alert('Среди вариантов есть время в прошлом — удалите его перед отправкой');
+            return false;
+        }
+    });
+
+    // Также проставим минимум для deadline (не в прошлом)
+    const deadlineInput = document.getElementById('id_deadline');
+    if (deadlineInput) {
+        const minDeadline = new Date();
+        minDeadline.setMinutes(minDeadline.getMinutes() + 1);
+        deadlineInput.min = minDeadline.toISOString().slice(0, 16);
+    }
+
+    // ===== Инициализация =====
+    renderCarousels();
+    renderCalendar();
+    updatePreview();
+    renderSlots();
+})();
+</script>
+{% endblock %}

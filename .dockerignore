@@ -1,0 +1,29 @@
+# Виртуальные окружения
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Секреты и локальная БД
+.env
+db.sqlite3
+db.sqlite3-journal
+
+# Тесты и кеши
+.pytest_cache/
+.git/
+.gitignore
+
+# Собранная статика (пересобирается в образе)
+staticfiles/
+
+# Артефакты хостинга и IDE
+passenger_wsgi.py
+.htaccess
+public_html/
+tmp/
+.idea/
+.vscode/

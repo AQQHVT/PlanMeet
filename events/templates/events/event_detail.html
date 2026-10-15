@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} — ПланМит{% endblock %}
+
+{% block content %}
+<div class="event-header">
+    <div class="flex flex-between">
+        <div style="flex: 1; min-width: 200px;">
+            <h1>{{ event.title }}</h1>
+            <div class="event-meta">
+                <span>👤 Организатор: {{ event.creator.username }}</span>
+                {% if event.location %}<span>📍 {{ event.location }}</span>{% endif %}
+                <span>👥 Проголосовало: {{ participants_count }}</span>
+                {% if is_closed %}
+                    <span class="badge badge-closed">Голосование закрыто</span>
+                {% else %}
+                    <span class="badge badge-open">Голосование открыто</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if is_creator %}
+            <div class="flex">
+                {% if not is_closed %}
+                    <form method="post" action="{% url 'events:close' slug=event.slug %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning">🔒 Закрыть голосование</button>
+                    </form>
+                {% endif %}
+                <a href="{% url 'events:edit' slug=event.slug %}" class="btn btn-ghost">✏️ Редактировать</a>
+                <a href="{% url 'events:weights' slug=event.slug %}" class="btn btn-ghost">⚖️ Веса</a>
+                <form method="post" action="{% url 'events:delete' slug=event.slug %}" style="display:inline;"
+                      onsubmit="return confirm('Удалить событие «{{ event.title }}»?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">🗑 Удалить</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if event.description %}
+        <div class="card mt-2">
+            {{ event.description|linebreaks }}
+        </div>
+    {% endif %}
+</div>
+
+{# === Ссылка для участников === #}
+<div class="share-box">
+    <div class="share-box-label">🔗 Ссылка для участников</div>
+    <div class="share-input-wrap">
+        <input type="text" id="share-link" value="{{ request.scheme }}://{{ request.get_host }}{% url 'events:detail' slug=event.slug %}" readonly>
+        <button type="button" class="btn btn-primary" onclick="copyLink()">📋 Копировать</button>
+    </div>
+</div>
+
+{# === Лучший вариант === #}
+{% if is_closed and best_slot and best_slot.get_total_votes > 0 %}
+    <div class="best-card">
+        <div class="best-card-label">🏆 Лучшее время</div>
+        <div class="best-card-time">{{ best_slot.date_time|date:"d.m.Y H:i" }} — {{ best_slot.get_end_time|date:"H:i" }}</div>
+        <div class="best-card-score">
+            ✅ {{ best_slot.get_yes_votes }} «да» ·
+            🤔 {{ best_slot.get_maybe_votes }} «возможно» ·
+            ❌ {{ best_slot.get_no_votes }} «нет»
+        </div>
+    </div>
+{% elif not is_closed and best_slot and best_slot.get_total_votes > 0 %}
+    <div class="card" style="border-color: var(--primary); background: var(--primary-light);">
+        <strong>📊 Лидирующий вариант:</strong> {{ best_slot.date_time|date:"d.m.Y H:i" }}
+        ({{ best_slot.get_yes_votes }} ✅, {{ best_slot.get_maybe_votes }} 🤔)
+    </div>
+{% endif %}
+
+{# === Форма голосования === #}
+{% if not is_closed %}
+    <h2 class="section-title mt-2">🗳 Проголосовать</h2>
+    {% if has_voted %}
+        <div class="card" style="text-align:center; padding: 24px;">
+            <div style="font-size:32px; margin-bottom:8px;">✅</div>
+            <p style="font-weight:600; margin-bottom:4px;">Вы уже проголосовали{% if voted_as %} как «{{ voted_as }}»{% endif %}</p>
+            <p class="text-muted" style="font-size:14px;">Ваш голос учтён в результатах ниже</p>
+        </div>
+    {% else %}
+        <div class="card">
+            <form method="post" action="{% url 'events:submit_votes' slug=event.slug %}" id="votes-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="voter-name-input">Ваше имя</label>
+                    <input type="text" id="voter-name-input" name="participant_name" class="form-input"
+                           placeholder="Иван Петров" maxlength="100" autocomplete="name">
+                    <div class="form-help">Вы сможете проголосовать только один раз</div>
+                </div>
+                {% if not is_creator %}
+                <div class="form-group">
+                    <label class="form-label" for="voter-email-input">Email <span class="text-muted">(необязательно)</span></label>
+                    <input type="email" id="voter-email-input" name="participant_email" class="form-input"
+                           placeholder="ivan@example.com" maxlength="254" autocomplete="email">
+                    <div class="form-help">Пришлём результаты на этот адрес, когда организатор закроет голосование</div>
+                </div>
+                {% endif %}
+
+                <div class="voting-table-wrap">
+                    <table class="voting-table">
+                        <thead>
+                            <tr>
+                                <th class="slot-header">Дата и время</th>
+                                <th>Длительность</th>
+                                <th>Голос</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for slot in time_slots %}
+                            <tr>
+                                <td style="text-align:left;">
+                                    <strong>{{ slot.date_time|date:"d.m.Y" }}</strong><br>
+                                    <span class="text-muted">{{ slot.date_time|date:"H:i" }} · {{ slot.date_time|date:"l" }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted" style="font-size:13px;">{{ slot.get_duration_display }}</span>
+                                </td>
+                                <td>
+                                    <div class="vote-radio-group">
+                                        <input type="radio" name="answer_{{ slot.id }}" value="yes"
+                                               id="yes_{{ slot.id }}" class="vote-radio">
+                                        <label for="yes_{{ slot.id }}"
+                                               class="vote-radio-label" title="Да">✓</label>
+
+                                        <input type="radio" name="answer_{{ slot.id }}" value="maybe"
+                                               id="maybe_{{ slot.id }}" class="vote-radio">
+                                        <label for="maybe_{{ slot.id }}"
+                                               class="vote-radio-label" title="Возможно">?</label>
+
+                                        <input type="radio" name="answer_{{ slot.id }}" value="no"
+                                               id="no_{{ slot.id }}" class="vote-radio">
+                                        <label for="no_{{ slot.id }}"
+                                               class="vote-radio-label" title="Нет">✗</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top:16px; text-align:right;">
+                    <button type="submit" class="btn btn-primary btn-large">
+                        ✅ Отправить голос
+                    </button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+{% endif %}
+
+{# === Результаты === #}
+<h2 class="section-title mt-2">📊 Результаты</h2>
+
+{% if participants_count > 0 %}
+    <div class="results-grid">
+        {% for slot in time_slots %}
+            <div class="result-row {% if best_slot and slot.id == best_slot.id %}is-best{% endif %}"
+                 data-yes="{{ slot.get_yes_votes }}"
+                 data-maybe="{{ slot.get_maybe_votes }}"
+                 data-no="{{ slot.get_no_votes }}"
+                 data-total="{{ slot.get_total_votes }}">
+                <div class="result-header">
+                    <div>
+                        <div class="result-datetime">
+                            {{ slot.date_time|date:"d.m.Y H:i" }} ({{ slot.date_time|date:"l" }})
+                            · <span style="font-size:13px;font-weight:400;color:var(--text-muted);">{{ slot.get_duration_display }}</span>
+                            {% if best_slot and slot.id == best_slot.id %}
+                                <span class="best-badge">🏆 ЛУЧШИЙ</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="result-score">
+                        Балл: <strong>{{ slot.get_score }}</strong> · Всего: {{ slot.get_total_votes }}
+                    </div>
+                </div>
+
+                {% if slot.get_total_votes > 0 %}
+                    <div class="vote-counts">
+                        <span class="vote-pill vote-pill-yes">✅ {{ slot.get_yes_votes }} да</span>
+                        <span class="vote-pill vote-pill-maybe">🤔 {{ slot.get_maybe_votes }} возможно</span>
+                        <span class="vote-pill vote-pill-no">❌ {{ slot.get_no_votes }} нет</span>
+                    </div>
+                {% else %}
+                    <div class="text-muted" style="font-size:13px;">Пока нет голосов</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state card">
+        <div class="empty-state-icon">📭</div>
+        <p>Пока никто не проголосовал. Поделитесь ссылкой с участниками!</p>
+    </div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+    function applyHeatmap() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.querySelectorAll('.results-grid .result-row[data-total]').forEach(function(row) {
+            const total = +row.dataset.total || 0;
+            if (!total) return;
+            const yes = +row.dataset.yes || 0;
+            const maybe = +row.dataset.maybe || 0;
+            const heat = (yes * 2 + maybe) / (total * 2); // 0..1
+
+            // Gradient: red(0) → amber(0.5) → green(1), muted palette
+            let r, g, b;
+            if (heat >= 0.5) {
+                const t = (heat - 0.5) * 2;
+                r = Math.round(192 - 102 * t); // 192 → 90
+                g = Math.round(148 + 10 * t);  // 148 → 158
+                b = Math.round(56 + 60 * t);   // 56 → 116
+            } else {
+                const t = heat * 2;
+                r = 192;
+                g = Math.round(92 + 56 * t);   // 92 → 148
+                b = Math.round(92 - 36 * t);   // 92 → 56
+            }
+
+            const opacity = isDark ? 0.12 + heat * 0.16 : 0.06 + heat * 0.14;
+            row.style.background = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')';
+            if (!row.classList.contains('is-best')) {
+                row.style.borderLeftColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', applyHeatmap);
+
+    var themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) themeBtn.addEventListener('click', function() { setTimeout(applyHeatmap, 0); });
+
+    const votesForm = document.getElementById('votes-form');
+    if (votesForm) {
+        const nameInput = document.getElementById('voter-name-input');
+        votesForm.addEventListener('submit', function(e) {
+            const name = nameInput.value.trim();
+            if (!name) {
+                e.preventDefault();
+                nameInput.focus();
+                nameInput.style.borderColor = 'var(--danger)';
+                setTimeout(() => nameInput.style.borderColor = '', 2000);
+                return;
+            }
+            const anyChecked = votesForm.querySelector('input[type="radio"]:checked');
+            if (!anyChecked) {
+                e.preventDefault();
+                alert('Выберите ответ хотя бы для одного варианта времени');
+            }
+        });
+    }
+
+    function copyLink() {
+        const input = document.getElementById('share-link');
+        input.select();
+        input.setSelectionRange(0, 99999);
+        try {
+            navigator.clipboard.writeText(input.value).then(() => showToast('Ссылка скопирована!'));
+        } catch (e) {
+            document.execCommand('copy');
+            showToast('Ссылка скопирована!');
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.textContent = msg;
+        toast.style.cssText = `
+            position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+            background:#1a1d2e;color:white;padding:12px 24px;border-radius:8px;
+            box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:1000;font-size:14px;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+</script>
+{% endblock %}
+{% endblock %}

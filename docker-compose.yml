@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    # Переменные окружения берутся из .env (скопируйте .env.example -> .env).
+    env_file:
+      - .env

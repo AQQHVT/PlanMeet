@@ -1,0 +1,9 @@
+Django==4.2.30
+gunicorn==21.2.0
+whitenoise==6.7.0
+
+# Опционально — автоматическая загрузка переменных из .env:
+# python-dotenv==1.0.1
+
+# Опционально — драйвер MySQL (если DJANGO_DB_ENGINE=mysql):
+# mysqlclient==2.2.4

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — ПланМит{% endblock %}
+
+{% block content %}
+<div style="max-width: 460px; margin: 32px auto;">
+    <div class="card">
+        <h2 class="text-center mb-2">📝 Регистрация</h2>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="form-help">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="form-errors">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-block btn-large">Создать аккаунт</button>
+        </form>
+        <p class="text-center mt-2 text-muted">
+            Уже есть аккаунт? <a href="{% url 'users:login' %}">Войти</a>
+        </p>
+    </div>
+</div>
+
+<style>
+    /* Применяем стили к стандартным полям Django */
+    #id_username, #id_email, #id_password1, #id_password2 {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+    }
+</style>
+{% endblock %}
