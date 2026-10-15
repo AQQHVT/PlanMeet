@@ -47,8 +47,8 @@
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/<ваш-логин>/planmeet.git
-cd planmeet
+git clone https://github.com/AQQHVT/PlanMeet.git
+cd PlanMeet
 
 # 2. Создать и активировать виртуальное окружение
 python -m venv venv
@@ -60,9 +60,12 @@ source venv/bin/activate
 # 3. Установить зависимости
 pip install -r requirements.txt
 
-# 4. (Опционально) задать переменные окружения
-# Скопировать .env.example в .env и при необходимости заполнить.
-# Без этого проект запустится на SQLite, письма выводятся в консоль.
+# 4. (Опционально) включить режим разработки — подробные страницы ошибок
+# Windows (cmd):        set DJANGO_DEBUG=True
+# Windows (PowerShell): $env:DJANGO_DEBUG="True"
+# Linux / macOS:        export DJANGO_DEBUG=True
+# Без остальных переменных проект запустится на SQLite, письма выводятся в консоль.
+# Полный список настроек — в .env.example.
 
 # 5. Применить миграции
 python manage.py migrate
@@ -75,6 +78,20 @@ python manage.py runserver
 ```
 
 Открыть в браузере: http://127.0.0.1:8000/
+
+## Запуск в Docker
+
+```bash
+cp .env.example .env   # задать DJANGO_SECRET_KEY и DJANGO_ALLOWED_HOSTS
+docker compose up --build
+```
+
+## Тесты
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
 ## Конфигурация через окружение
 

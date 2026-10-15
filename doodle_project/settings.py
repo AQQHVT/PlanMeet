@@ -118,6 +118,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# WhiteNoise ищет файлы и в STATICFILES_DIRS, поэтому стили отдаются сразу
+# после клонирования — даже при DEBUG=False и без collectstatic.
+# В продакшене всё равно рекомендуется выполнять collectstatic (так делает Dockerfile).
+WHITENOISE_USE_FINDERS = True
+
 # WhiteNoise: сжатие статики при сборке (без манифеста — безопасно для проекта).
 STORAGES = {
     'default': {
