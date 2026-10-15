@@ -1,16 +1,5 @@
 """
-Обновлённые модели для events/models.py
-
-Изменения по сравнению с оригиналом:
-1. Event: добавлено поле default_duration_minutes
-2. TimeSlot: добавлено поле duration_minutes
-3. TimeSlot.clean(): валидация — нельзя создавать слоты в прошлом
-4. Event.clean(): валидация — дедлайн не может быть в прошлом
-5. Добавлены helper-методы для отображения длительности
-
-После замены файла:
-    python manage.py makemigrations events
-    python manage.py migrate
+Модели приложения events: событие, варианты времени, голоса и веса участников.
 """
 import uuid
 from datetime import timedelta

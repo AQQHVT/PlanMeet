@@ -1,5 +1,5 @@
 """
-Обновлённые формы для events/forms.py
+Формы приложения events.
 """
 from django import forms
 from django.utils import timezone

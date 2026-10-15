@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mass_mail
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -9,8 +10,13 @@ logger = logging.getLogger(__name__)
 def _build_event_url(event, request=None):
     if request is not None:
         return request.build_absolute_uri(f'/events/{event.slug}/')
-    site_url = getattr(settings, 'SITE_URL', 'https://ggggggg6.beget.tech').rstrip('/')
+    site_url = settings.SITE_URL.rstrip('/')
     return f'{site_url}/events/{event.slug}/'
+
+
+def _format_dt(dt):
+    """Дата/время в часовом поясе проекта (TIME_ZONE), а не в UTC."""
+    return timezone.localtime(dt).strftime('%d.%m.%Y %H:%M')
 
 
 def _build_results_text(event):
@@ -19,7 +25,7 @@ def _build_results_text(event):
     for slot in event.time_slots.prefetch_related('votes').all():
         marker = ' [лучший]' if best_slot and slot.id == best_slot.id else ''
         slots_lines.append(
-            f"  {slot.date_time.strftime('%d.%m.%Y %H:%M')} ({slot.get_duration_display()}){marker}\n"
+            f"  {_format_dt(slot.date_time)} ({slot.get_duration_display()}){marker}\n"
             f"    Да: {slot.get_yes_votes()}  Возможно: {slot.get_maybe_votes()}  Нет: {slot.get_no_votes()}"
         )
     return '\n'.join(slots_lines)
@@ -35,7 +41,7 @@ def send_voting_results(event, request=None):
 
     best_line = ''
     if best_slot and best_slot.get_total_votes() > 0:
-        best_line = f'\nЛучший вариант: {best_slot.date_time.strftime("%d.%m.%Y %H:%M")}\n'
+        best_line = f'\nЛучший вариант: {_format_dt(best_slot.date_time)}\n'
 
     from_email = settings.DEFAULT_FROM_EMAIL
     datatuple = []

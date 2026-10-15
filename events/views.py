@@ -1,13 +1,6 @@
 """
-Обновлённые представления для events/views.py
-
-Ключевые особенности:
-- Серверная валидация: запрет создания слотов с временем в прошлом
-- Запрет deadline в прошлом
-- Поддержка длительности события (duration_minutes)
-- Корректная обработка JSON из формы
-
-Замените соответствующие функции в events/views.py
+Представления приложения events: создание и редактирование событий,
+голосование, закрытие голосования и управление весами участников.
 """
 
 import json
@@ -296,36 +289,6 @@ def submit_votes(request, slug):
     return redirect('events:detail', slug=slug)
 
 
-@require_POST
-def vote_on_slot(request, slug, slot_id):
-    """Голосование за вариант."""
-    event = get_object_or_404(Event, slug=slug)
-    time_slot = get_object_or_404(TimeSlot, id=slot_id, event=event)
-
-    if event.is_closed():
-        messages.error(request, 'Голосование по этому событию закрыто')
-        return redirect('events:detail', slug=slug)
-
-    answer = request.POST.get('answer', 'yes')
-    participant_name = request.POST.get('participant_name', '').strip()
-
-    if not participant_name:
-        messages.error(request, 'Укажите ваше имя')
-        return redirect('events:detail', slug=slug)
-
-    if answer not in ('yes', 'maybe', 'no'):
-        messages.error(request, 'Неверный ответ')
-        return redirect('events:detail', slug=slug)
-
-    Vote.objects.update_or_create(
-        time_slot=time_slot,
-        participant_name=participant_name,
-        defaults={'answer': answer},
-    )
-    messages.success(request, 'Ваш голос учтён')
-    return redirect('events:detail', slug=slug)
-
-
 def _send_results_emails(event, request=None):
     """Рассылает итоги голосования участникам и организатору.
 
@@ -345,8 +308,13 @@ def close_event(request, slug):
     event.closed_manually = True
     event.notification_sent = True
     event.save()
-    _send_results_emails(event, request)
-    messages.success(request, 'Голосование закрыто. Участники с email получат результаты.')
+    try:
+        _send_results_emails(event, request)
+    except Exception:
+        # Ошибка уже записана в лог в send_voting_results; голосование при этом закрыто.
+        messages.warning(request, 'Голосование закрыто, но письма с результатами отправить не удалось.')
+    else:
+        messages.success(request, 'Голосование закрыто. Участники с email получат результаты.')
     return redirect('events:detail', slug=slug)
 
 
